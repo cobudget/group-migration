@@ -1,0 +1,8 @@
+{
+    "host": "localhost",
+    "port": "5432",
+    "dbname": "",
+    "user": "",
+    "password": "",
+    "groups": [1266]
+}
