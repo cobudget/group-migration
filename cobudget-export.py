@@ -26,7 +26,12 @@ def get_group(db_cursor, group_id):
 
     group_query = f'''
     SELECT
-    name, created_at, updated_at, currency_code, description, status_account_id
+    name,
+    created_at,
+    updated_at,
+    currency_code,
+    description,
+    status_account_id
     FROM groups
     WHERE id = {group_id}
     '''
@@ -53,7 +58,20 @@ def get_buckets(db_cursor, group_id):
 
     buckets_query = f'''
     SELECT
-    id, created_at, updated_at, name, description, user_id, target, status, funding_closes_at, funded_at, live_at, archived_at, paid_at, account_id
+    id,
+    created_at,
+    updated_at,
+    name,
+    description,
+    user_id,
+    target,
+    status,
+    funding_closes_at,
+    funded_at,
+    live_at,
+    archived_at,
+    paid_at,
+    account_id
     FROM buckets
     WHERE group_id = {group_id}
     '''
@@ -70,14 +88,14 @@ def get_buckets(db_cursor, group_id):
             'name': b[3],
             'description': b[4],
             'user_id': b[5],
-            'target:': b[6],
-            'status:': b[7],
-            'funding_closes_at:': b[8],
-            'funded_at:': b[9],
-            'live_at:': b[10],
-            'archived_at:': b[11],
-            'paid_at:': b[12],
-            'account_id:': b[13],
+            'target': float(b[6]),
+            'status': b[7],
+            'funding_closes_at': b[8],
+            'funded_at': b[9],
+            'live_at': b[10],
+            'archived_at': b[11],
+            'paid_at': b[12],
+            'account_id': b[13],
         }
         buckets[b[0]] = bucket
 
@@ -89,7 +107,19 @@ def get_members(db_cursor, group_id):
 
     members_query = f'''
     SELECT
-    memberships.id, group_id, member_id, is_admin, memberships.created_at, memberships.updated_at, status_account_id, incoming_account_id, outgoing_account_id, users.id, users.email, users.name, users.uid 
+    memberships.id,
+    group_id,
+    member_id,
+    is_admin,
+    memberships.created_at,
+    memberships.updated_at,
+    status_account_id,
+    incoming_account_id,
+    outgoing_account_id,
+    users.id,
+    users.email,
+    users.name,
+    users.uid 
     FROM memberships 
     INNER JOIN users
     ON memberships.member_id = users.id
@@ -126,7 +156,12 @@ def get_allocations(db_cursor, group_id):
 
     allocation_query = f'''
     SELECT
-    id, created_at, updated_at, user_id, amount, group_id
+    id,
+    created_at,
+    updated_at,
+    user_id,
+    amount,
+    group_id
     FROM allocations
     WHERE group_id =  {group_id}
     '''
@@ -141,7 +176,7 @@ def get_allocations(db_cursor, group_id):
             'created_at': a[1], 
             'updated_at': a[2], 
             'user_id': a[3], 
-            'amount': a[4], 
+            'amount': float(a[4]), 
             'group_id': a[5]
         }
         allocations[a[0]] = allocation
@@ -154,7 +189,13 @@ def get_contributions(db_cursor, group_id):
 
     contribution_query = f'''
     SELECT
-    contributions.id, contributions.created_at, contributions.updated_at, contributions.user_id, amount, bucket_id, buckets.group_id
+    contributions.id,
+    contributions.created_at,
+    contributions.updated_at,
+    contributions.user_id,
+    amount,
+    bucket_id,
+    buckets.group_id
     FROM contributions
     INNER JOIN buckets 
     ON contributions.bucket_id = buckets.id 
@@ -171,7 +212,7 @@ def get_contributions(db_cursor, group_id):
             'created_at': a[1], 
             'updated_at': a[2], 
             'user_id': a[3], 
-            'amount': a[4], 
+            'amount': float(a[4]), 
             'bucket_id': a[5]
         }
         contributions[a[0]] = contribution
@@ -184,7 +225,10 @@ def get_accounts(db_cursor, group_id):
 
     account_query = f'''
     SELECT
-    id, group_id, created_at, updated_at
+    id,
+    group_id,
+    created_at,
+    updated_at
     FROM accounts
     WHERE group_id = {group_id}
     '''
@@ -211,7 +255,13 @@ def get_transactions(db_cursor, group_id):
 
     transaction_query = f'''
     SELECT
-    transactions.id, transactions.created_at, transactions.updated_at, user_id, amount, from_account_id, to_account_id
+    transactions.id,
+    transactions.created_at,
+    transactions.updated_at,
+    user_id,
+    amount,
+    from_account_id,
+    to_account_id
     FROM transactions
     INNER JOIN accounts 
     ON transactions.from_account_id = accounts.id
@@ -228,7 +278,7 @@ def get_transactions(db_cursor, group_id):
             'created_at': a[1], 
             'updated_at': a[2], 
             'user_id': a[3], 
-            'amount': a[4], 
+            'amount': float(a[4]), 
             'from_account_id': a[5],
             'to_account_id': a[6]
         }
@@ -242,7 +292,12 @@ def get_comments(db_cursor, group_id):
 
     comment_query = f'''
     SELECT
-    comments.id, body, comments.user_id, bucket_id, comments.created_at, comments.updated_at
+    comments.id,
+    body,
+    comments.user_id,
+    bucket_id,
+    comments.created_at,
+    comments.updated_at
     FROM comments
     INNER JOIN buckets
     ON buckets.id = comments.bucket_id
@@ -284,9 +339,9 @@ db_conn = psycopg2.connect(
 
 db_cursor = db_conn.cursor()
 
-groups = {}
+data = {'groups': {}, 'users': {}}
 for gid in group_ids:
-    groups[gid] = {
+    data['groups'][gid] = {
         'group_data': get_group(db_cursor, gid),
         'buckets': get_buckets(db_cursor, gid),
         'members': get_members(db_cursor, gid),
@@ -297,5 +352,52 @@ for gid in group_ids:
         'comments': get_comments(db_cursor, gid)
     }
 
+    for mid, m in data['groups'][gid]['members'].items():
+        if m['user_id'] not in data['users'].keys():
+            data['users'][m['user_id']] = {'id': m['user_id'], 'email': m['user_email'], 'name': m['user_name'], 'uid': m['user_uid']}
+
+    for bucket in data['groups'][gid]['buckets'].values():
+        data['groups'][gid]['accounts'][bucket['account_id']]['type'] = 'bucket'
+        data['groups'][gid]['accounts'][bucket['account_id']]['owner'] = bucket['name']
+
+    for member in data['groups'][gid]['members'].values():
+        data['groups'][gid]['accounts'][member['status_account_id']]['type'] = 'status_account'
+        data['groups'][gid]['accounts'][member['status_account_id']]['owner'] = 'user: ' + member['user_name']
+        data['groups'][gid]['accounts'][member['incoming_account_id']]['type'] = 'incoming_account'
+        data['groups'][gid]['accounts'][member['incoming_account_id']]['owner'] = 'user: ' + member['user_name']
+        data['groups'][gid]['accounts'][member['outgoing_account_id']]['type'] = 'outgoing_account'
+        data['groups'][gid]['accounts'][member['outgoing_account_id']]['owner'] = 'user: ' + member['user_name']
+
+    for transaction in data['groups'][gid]['transactions'].values():
+        from_account = data['groups'][gid]['accounts'][transaction['from_account_id']]
+        to_account = data['groups'][gid]['accounts'][transaction['to_account_id']]
+        data['groups'][gid]['transactions'][transaction['id']]['description'] = str(transaction['amount']) + ' from ' + from_account['owner'] + ': ' + from_account['type'] + ' to ' + to_account['owner'] + ': ' + to_account['type']
+
+    if config['debug']:
+        allocation_sum = 0
+        print('Allocations: ')
+        print('user, amount, group')
+        for a in data['groups'][gid]['allocations'].values():
+            allocation_sum += a['amount']
+            print(f'{a["user_id"]},{a["amount"]},{a["group_id"]}')
+
+        contribution_sum = 0
+        print('Contributions: ')
+        print('user, amount, bucket')    
+        for c in data['groups'][gid]['contributions'].values():
+            contribution_sum += c['amount']
+            print(f'{c["user_id"]},{c["amount"]},{c["bucket_id"]}')
+
+        transactions_sum = 0
+        print('Transactions: ')
+        print('user, amount, from account, to account')    
+        for t in data['groups'][gid]['transactions'].values():
+            transactions_sum += t['amount']
+            print(f'{t["user_id"]},{t["amount"]},{t["from_account_id"]},{t["to_account_id"]}')
+
+        print('allocations: ' + str(allocation_sum))
+        print('contributions: ' + str(contribution_sum))
+        print('transactions: ' + str(transactions_sum))
+
 with open(f'./group_exports.json', 'w') as file:
-    json.dump(groups, file, default=str)
+    json.dump(data, file, default=str)
