@@ -7,14 +7,14 @@ import os
 mylogs = logging.getLogger(__name__)
 mylogs.setLevel(logging.DEBUG)
 
-file = logging.FileHandler("cobudget-group-export.log")
+file = logging.FileHandler('cobudget-group-export.log')
 file.setLevel(logging.INFO)
-fileformat = logging.Formatter("%(asctime)s:%(levelname)s: %(message)s",datefmt="%H:%M:%S")
+fileformat = logging.Formatter('%(asctime)s:%(levelname)s: %(message)s',datefmt='%H:%M:%S')
 file.setFormatter(fileformat)
 
 stream = logging.StreamHandler()
 stream.setLevel(logging.DEBUG)
-streamformat = logging.Formatter("%(asctime)s: %(message)s")
+streamformat = logging.Formatter('%(asctime)s: %(message)s')
 stream.setFormatter(streamformat)
 
 mylogs.addHandler(file)
@@ -95,7 +95,8 @@ def get_buckets(db_cursor, group_id):
             'live_at': b[10],
             'archived_at': b[11],
             'paid_at': b[12],
-            'account_id': b[13],
+            'status_account_id': b[13],
+            'outgoing_account_id': b[0] + 100000
         }
         buckets[b[0]] = bucket
 
@@ -324,7 +325,7 @@ def get_comments(db_cursor, group_id):
 
 # Get group data
 
-with open("./config.json") as json_config:
+with open('./config.json') as json_config:
     config = json.load(json_config)
 
 group_ids = config['groups']
@@ -357,21 +358,35 @@ for gid in group_ids:
             data['users'][m['user_id']] = {'id': m['user_id'], 'email': m['user_email'], 'name': m['user_name'], 'uid': m['user_uid']}
 
     for bucket in data['groups'][gid]['buckets'].values():
-        data['groups'][gid]['accounts'][bucket['account_id']]['type'] = 'bucket'
-        data['groups'][gid]['accounts'][bucket['account_id']]['owner'] = bucket['name']
+        data['groups'][gid]['accounts'][bucket['status_account_id']]['type'] = 'bucket_status'
+        data['groups'][gid]['accounts'][bucket['status_account_id']]['owner_name'] = 'bucket: ' + bucket['name']
+        data['groups'][gid]['accounts'][bucket['status_account_id']]['owner_id'] = bucket['id']
+        data['groups'][gid]['accounts'][bucket['id'] + 100000] = {
+            'id': bucket['id'] + 100000,
+            'group_id': gid,
+            'created_at': bucket['created_at'],
+            'updated_at': bucket['updated_at'],
+            'type': 'bucket_outgoing',
+            'owner_name': bucket['name'],
+            'owner_id': bucket['id']
+            }
 
     for member in data['groups'][gid]['members'].values():
         data['groups'][gid]['accounts'][member['status_account_id']]['type'] = 'status_account'
-        data['groups'][gid]['accounts'][member['status_account_id']]['owner'] = 'user: ' + member['user_name']
+        data['groups'][gid]['accounts'][member['status_account_id']]['owner_name'] = 'user: ' + member['user_name']
         data['groups'][gid]['accounts'][member['incoming_account_id']]['type'] = 'incoming_account'
-        data['groups'][gid]['accounts'][member['incoming_account_id']]['owner'] = 'user: ' + member['user_name']
+        data['groups'][gid]['accounts'][member['incoming_account_id']]['owner_name'] = 'user: ' + member['user_name']
         data['groups'][gid]['accounts'][member['outgoing_account_id']]['type'] = 'outgoing_account'
-        data['groups'][gid]['accounts'][member['outgoing_account_id']]['owner'] = 'user: ' + member['user_name']
+        data['groups'][gid]['accounts'][member['outgoing_account_id']]['owner_name'] = 'user: ' + member['user_name']
 
     for transaction in data['groups'][gid]['transactions'].values():
         from_account = data['groups'][gid]['accounts'][transaction['from_account_id']]
         to_account = data['groups'][gid]['accounts'][transaction['to_account_id']]
-        data['groups'][gid]['transactions'][transaction['id']]['description'] = str(transaction['amount']) + ' from ' + from_account['owner'] + ': ' + from_account['type'] + ' to ' + to_account['owner'] + ': ' + to_account['type']
+        if to_account['type'] == 'outgoing_account':
+            bucket = data['groups'][gid]['buckets'][from_account['owner_id']]
+            to_account = data['groups'][gid]['accounts'][bucket['outgoing_account_id']]
+            data['groups'][gid]['transactions'][transaction['id']]['to_account_id'] = bucket['outgoing_account_id']
+        data['groups'][gid]['transactions'][transaction['id']]['description'] = str(transaction['amount']) + ' from ' + from_account['owner_name'] + ': ' + from_account['type'] + ' to ' + to_account['owner_name'] + ': ' + to_account['type']
 
     if config['debug']:
         allocation_sum = 0
