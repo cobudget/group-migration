@@ -964,7 +964,7 @@
             "comments": {
                 "6088": {
                     "id": 6088,
-                    "body": "<div>great idea</div>",
+                    "body": "great idea",
                     "user_id": 25505,
                     "bucket_id": 3616,
                     "created_at": "2021-03-30 21:24:18.303040",
@@ -972,7 +972,7 @@
                 },
                 "6089": {
                     "id": 6089,
-                    "body": "leave it there<br>",
+                    "body": "leave it there",
                     "user_id": 25505,
                     "bucket_id": 3617,
                     "created_at": "2021-03-30 21:25:32.265129",

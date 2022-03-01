@@ -1,4 +1,6 @@
 from pprint import pprint
+from io import StringIO
+from html.parser import HTMLParser
 import psycopg2
 import logging
 import json
@@ -19,6 +21,23 @@ stream.setFormatter(streamformat)
 
 mylogs.addHandler(file)
 mylogs.addHandler(stream)
+
+class MLStripper(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.reset()
+        self.strict = False
+        self.convert_charrefs= True
+        self.text = StringIO()
+    def handle_data(self, d):
+        self.text.write(d)
+    def get_data(self):
+        return self.text.getvalue()
+
+def strip_tags(html):
+    s = MLStripper()
+    s.feed(html)
+    return s.get_data()
 
 def get_group(db_cursor, group_id):
 
@@ -312,7 +331,7 @@ def get_comments(db_cursor, group_id):
     for c in comment_data:
         comment = {
             'id': c[0], 
-            'body': c[1], 
+            'body': strip_tags(c[1]), 
             'user_id': c[2], 
             'bucket_id': c[3], 
             'created_at': c[4], 
